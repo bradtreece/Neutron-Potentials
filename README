@@ -1,4 +1,2 @@
-The CMU-Build.tar.gz has the running version I had while working at CMU. It is self-contained and should run,
-except that there are file paths in the .py that would need updating. This file should not be altered, a universal version
-is being developed and will be placed on this repository.
+The CMU-Build.tar.gz has the running version I had while working at CMU. It is self-contained and should run, except that there are file paths in the .py that would need updating. This file should not be altered, a universal version is being developed and will be placed on this repository.
 
