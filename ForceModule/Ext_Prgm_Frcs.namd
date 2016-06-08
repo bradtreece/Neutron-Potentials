@@ -1,0 +1,111 @@
+################################################
+### Run Helix in Hexane Forced using Density ###
+###                                          ###
+################################################
+
+structure			P_A_Hx.psf
+coordinates			P_A_Hx_Centered.pdb
+outputName			Ext_Prgm_Frcs
+
+set temperature		300
+set rstrt		1;			# This indicates whether or not you are using restart files
+
+# Continuing a job from the restart files
+if {$rstrt} {
+set inputname		Alpha_Test_Start      
+binCoordinates		$inputname.coor
+binVelocities		$inputname.vel;		# Remove the "temperature" entry if you use this!
+extendedSystem		$inputname.xsc
+}
+
+firsttimestep		0
+
+###########################
+## SIMULATION PARAMETERS ##
+###########################
+
+
+# Input
+paraTypeCharmm		on
+parameters		par_all36_prot.prm
+parameters		par_all35_ethers.prm
+
+# NOTE: Do not set the initial velocity temperature if you 
+# have also specified a .vel restart file!
+if {[expr 1-$rstrt]} {
+temperature         $temperature
+}
+
+
+# Periodic Boundary Conditions
+# NOTE: Do not set the periodic cell basis if you have also 
+# specified an .xsc restart file!
+if {[expr 1-$rstrt]} { 
+cellBasisVector1	98.0	0.0	0.0
+cellBasisVector2	0.0	98.0	0.0
+cellBasisVector3	0.0	0.0	98.0
+cellOrigin		2.349891185760498 2.292149305343628 2.015645980834961    
+}
+wrapWater           on
+wrapAll             on
+
+
+# Force-Field Parameters
+exclude             scaled1-4
+1-4scaling          1.0
+cutoff              12.
+switching           on
+switchdist          10.
+pairlistdist        14.
+margin		    10.
+
+# Integrator Parameters
+timestep            2.0;			# 2fs/step
+rigidBonds          all;			# needed for 2fs steps
+nonbondedFreq       1
+fullElectFrequency  2  
+stepspercycle       20
+
+#PME (for full-system periodic electrostatics)
+PME                 yes
+PMEGridSpacing      1.0
+#PMEGridSizeX       90
+#PMEGridSizeY       134
+#PMEGridSizeZ       155
+
+
+# Constant Temperature Control
+langevin            on    ;# do langevin dynamics
+langevinDamping     1     ;# damping coefficient (gamma) of 5/ps
+langevinTemp        $temperature
+
+# Constant Pressure Control (variable volume)
+useGroupPressure      yes ;# needed for 2fs steps
+useFlexibleCell       no  ;# no for water box, yes for membrane
+useConstantArea       no  ;# no for water box, yes for membrane
+
+langevinPiston        on
+langevinPistonTarget  1.01325 ;#  in bar -> 1 atm
+langevinPistonPeriod  200.
+langevinPistonDecay   50.
+langevinPistonTemp    $temperature
+
+
+restartfreq        1000;			# 1000steps = 2ps
+dcdfreq            1000;			#
+xstFreq            1000
+outputEnergies     100
+outputPressure     100
+
+binaryOutput			yes
+binaryRestart			no
+
+COMmotion			no
+
+
+extForces			yes
+extForcesCommand		"python2.7 ForceModule.py ExtCoord.txt ExtForce.txt Rho_EXP.txt 'range(1,263)'"
+extCoordFilename		"ExtCoord.txt"
+extForceFilename		"ExtForce.txt"
+
+run 50000
